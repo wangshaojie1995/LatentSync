@@ -1,18 +1,25 @@
 #!/bin/bash
+# 设置conda镜像源
+conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/
+conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge 
+conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/msys2/
+# 设置搜索时显示通道地址 从channel中安装包时显示channel的url，这样就可以知道包的安装来源
+conda config --set show_channel_urls yes
 
 # Create a new conda environment
-conda create -y -n latentsync python=3.10.13
+# conda create -y -n latentsync python=3.10.13
 conda activate latentsync
 
-# Install ffmpeg
-conda install -y -c conda-forge ffmpeg
+# # Install ffmpeg
+# conda install -y -c conda-forge ffmpeg
 
-# Python dependencies
-pip install -r requirements.txt
+# # Python dependencies
+# pip install -r requirements.txt
 
 # OpenCV dependencies
-sudo apt -y install libgl1
-
+apt -y install libgl1
+echo 'huggingface 安装'
+export HF_ENDPOINT="https://hf-mirror.com" 
 # Download all the checkpoints from HuggingFace
 huggingface-cli download chunyu-li/LatentSync --local-dir checkpoints --exclude "*.git*" "README.md"
 
