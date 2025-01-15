@@ -108,9 +108,11 @@ These already include all the checkpoints required for latentsync training and i
 
 ## 🚀 Inference
 
+There are two ways to perform inference, and both require 6.5 GB of VRAM.
+
 ### 1. Gradio App
 
-Run the Gradio app for inference, which requires about 6.5 GB GPU memory.
+Run the Gradio app for inference:
 
 ```bash
 python gradio_app.py
@@ -118,13 +120,13 @@ python gradio_app.py
 
 ### 2. Command Line Interface
 
-Run the script for inference, which requires about 6.5 GB GPU memory.
+Run the script for inference:
 
 ```bash
 ./inference.sh
 ```
 
-You can change the parameter `guidance_scale` to 1.5 to improve the lip-sync accuracy.
+You can change the parameters `inference_steps` and `guidance_scale` to see more results.
 
 ## 🔄 Data Processing Pipeline
 
