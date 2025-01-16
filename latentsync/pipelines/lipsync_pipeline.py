@@ -1,21 +1,22 @@
 # Adapted from https://github.com/guoyww/AnimateDiff/blob/main/animatediff/pipelines/pipeline_animation.py
 
-import inspect
-import os
-import shutil
-from typing import Callable, List, Optional, Union
-import subprocess
+import inspect  # 导入inspect模块，用于检查活动对象
+import os  # 导入os模块，用于与操作系统交互
+import shutil  # 导入shutil模块，用于高级文件操作
+from typing import Callable, List, Optional, Union  # 导入typing模块中的类型提示
+import subprocess  # 导入subprocess模块，用于生成新进程
 
-import numpy as np
-import torch
-import torchvision
+import numpy as np  # 导入numpy模块，用于数值计算
+import torch  # 导入torch模块，用于深度学习
+import torchvision  # 导入torchvision模块，用于计算机视觉任务
 
-from diffusers.utils import is_accelerate_available
-from packaging import version
+from diffusers.utils import is_accelerate_available  # 从diffusers.utils导入is_accelerate_available函数
+from packaging import version  # 导入packaging模块中的version类
 
-from diffusers.configuration_utils import FrozenDict
-from diffusers.models import AutoencoderKL
-from diffusers.pipeline_utils import DiffusionPipeline
+from diffusers.configuration_utils import FrozenDict  # 从diffusers.configuration_utils导入FrozenDict类
+from diffusers.models import AutoencoderKL  # 从diffusers.models导入AutoencoderKL类
+from diffusers.pipeline_utils import DiffusionPipeline  # 从diffusers.pipeline_utils导入DiffusionPipeline类
+# 从diffusers.schedulers导入多个调度器类
 from diffusers.schedulers import (
     DDIMScheduler,
     DPMSolverMultistepScheduler,
@@ -24,17 +25,18 @@ from diffusers.schedulers import (
     LMSDiscreteScheduler,
     PNDMScheduler,
 )
-from diffusers.utils import deprecate, logging
+from diffusers.utils import deprecate, logging  # 从diffusers.utils导入deprecate和logging
 
-from einops import rearrange
-import cv2
+from einops import rearrange  # 从einops导入rearrange函数
+import cv2  # 导入cv2模块，用于计算机视觉任务
 
-from ..models.unet import UNet3DConditionModel
-from ..utils.image_processor import ImageProcessor
-from ..utils.util import read_video, read_audio, write_video
-from ..whisper.audio2feature import Audio2Feature
-import tqdm
-import soundfile as sf
+from ..models.unet import UNet3DConditionModel  # 从上级目录的models.unet模块导入UNet3DConditionModel类
+from ..utils.image_processor import ImageProcessor  # 从上级目录的utils.image_processor模块导入ImageProcessor类
+from ..utils.util import read_video, read_audio, write_video  # 从上级目录的utils.util模块导入多个函数
+from ..whisper.audio2feature import Audio2Feature  # 从上级目录的whisper.audio2feature模块导入Audio2Feature类
+import tqdm  # 导入tqdm模块，用于显示进度条
+import soundfile as sf  # 导入soundfile模块，用于读写音频文件
+
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 
@@ -464,6 +466,19 @@ class LipsyncPipeline(DiffusionPipeline):
         boxes (list): 所有人脸的边界框。
         affine_matrices (list): 所有的仿射变换矩阵。
         """
+        # 获取视频文件所在的目录
+        video_dir = os.path.dirname(video_path)
+        # 使用视频文件名（不含扩展名）作为缓存文件的基础名
+        video_name = os.path.splitext(os.path.basename(video_path))[0]
+        # 创建缓存文件的完整路径
+        cache_file = os.path.join(video_dir, f"{video_name}_cache.npy")
+        # 检查缓存文件是否存在，如果存在则加载缓存
+        if os.path.exists(cache_file):
+            print(f"加载缓存文件: {cache_file}")
+            cached_data = np.load(cache_file, allow_pickle=True)
+            faces, video_frames, boxes, affine_matrices = cached_data
+            return faces, video_frames, boxes, affine_matrices
+
         # 读取视频帧
         video_frames = read_video(video_path, use_decord=False)
         faces = []
@@ -486,6 +501,9 @@ class LipsyncPipeline(DiffusionPipeline):
 
         # 将人脸图像列表转换为张量
         faces = torch.stack(faces)
+        # 存储缓存
+        np.save(cache_file, (faces, video_frames, boxes, affine_matrices))
+
         return faces, video_frames, boxes, affine_matrices
 
     def restore_video(self, faces, video_frames, boxes, affine_matrices):
@@ -592,6 +610,7 @@ class LipsyncPipeline(DiffusionPipeline):
 
         # 进行仿射变换以提取面部特征
         faces, original_video_frames, boxes, affine_matrices = self.affine_transform_video(video_path)
+        print('人脸提取完成',faces, original_video_frames, boxes, affine_matrices)
         audio_samples = read_audio(audio_path)
 
         # 1. 设置默认的高度和宽度

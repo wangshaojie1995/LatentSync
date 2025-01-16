@@ -37,6 +37,19 @@ def load_fixed_mask(resolution: int) -> torch.Tensor:
 
 
 class ImageProcessor:
+    """
+    初始化 ImageProcessor 类的实例。
+    
+    参数:
+        resolution (int): 图像处理的分辨率，默认值为512。
+        mask (str): 使用的掩码类型，可选值为 "mouth"、"face"、"eye" 或 "fix_mask"，默认为 "fix_mask"。
+        device (str): 计算设备，支持 "cpu" 和其他设备（如 "cuda"），默认为 "cpu"。
+        mask_image: 可选的预定义掩码图像，如果未提供且 mask 为 "fix_mask"，则加载默认固定掩码。
+    
+    根据 mask 参数的不同，初始化不同的面部网格处理工具或固定掩码处理工具。
+    如果使用 "fix_mask"，还会根据设备类型初始化面部标志点对齐工具。
+    """
+
     def __init__(self, resolution: int = 512, mask: str = "fix_mask", device: str = "cpu", mask_image=None):
         self.resolution = resolution
         self.resize = transforms.Resize(
