@@ -36,7 +36,7 @@ from ..utils.util import read_video, read_audio, write_video  # 从上级目录�
 from ..whisper.audio2feature import Audio2Feature  # 从上级目录的whisper.audio2feature模块导入Audio2Feature类
 import tqdm  # 导入tqdm模块，用于显示进度条
 import soundfile as sf  # 导入soundfile模块，用于读写音频文件
-
+import time
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 
@@ -599,6 +599,7 @@ class LipsyncPipeline(DiffusionPipeline):
         返回:
             无返回值，直接生成输出视频文件。
         """
+        print('开始运行', time.time())
         is_train = self.unet.training
         self.unet.eval()
 
@@ -610,7 +611,7 @@ class LipsyncPipeline(DiffusionPipeline):
 
         # 进行仿射变换以提取面部特征
         faces, original_video_frames, boxes, affine_matrices = self.affine_transform_video(video_path)
-        print('人脸提取完成',faces, original_video_frames, boxes, affine_matrices)
+        print('人脸提取完成', time.time())
         audio_samples = read_audio(audio_path)
 
         # 1. 设置默认的高度和宽度
@@ -643,6 +644,7 @@ class LipsyncPipeline(DiffusionPipeline):
             num_inferences = min(len(faces), len(whisper_chunks)) // num_frames
         else:
             num_inferences = len(faces) // num_frames
+        print('处理音频特征完成', time.time())
 
         synced_video_frames = []
         masked_video_frames = []
@@ -743,9 +745,11 @@ class LipsyncPipeline(DiffusionPipeline):
             synced_video_frames.append(decoded_latents)
             # masked_video_frames.append(masked_pixel_values)
 
+        print('推理完成', time.time())
         synced_video_frames = self.restore_video(
             torch.cat(synced_video_frames), original_video_frames, boxes, affine_matrices
         )
+        print('视频帧恢复完成', time.time())
         # masked_video_frames = self.restore_video(
         #     torch.cat(masked_video_frames), original_video_frames, boxes, affine_matrices
         # )
