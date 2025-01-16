@@ -37,6 +37,7 @@ from ..whisper.audio2feature import Audio2Feature  # 从上级目录的whisper.a
 import tqdm  # 导入tqdm模块，用于显示进度条
 import soundfile as sf  # 导入soundfile模块，用于读写音频文件
 import time
+import pickle
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 
@@ -475,9 +476,9 @@ class LipsyncPipeline(DiffusionPipeline):
         # 检查缓存文件是否存在，如果存在则加载缓存
         if os.path.exists(cache_file):
             print(f"加载缓存文件: {cache_file}")
-            cached_data = np.load(cache_file, allow_pickle=True)
-            faces, video_frames, boxes, affine_matrices = cached_data
-            return faces, video_frames, boxes, affine_matrices
+            with open(cache_file, "rb") as f:
+                faces, video_frames, boxes, affine_matrices = pickle.load(f)
+                return faces, video_frames, boxes, affine_matrices
 
         # 读取视频帧
         video_frames = read_video(video_path, use_decord=False)
@@ -502,8 +503,8 @@ class LipsyncPipeline(DiffusionPipeline):
         # 将人脸图像列表转换为张量
         faces = torch.stack(faces)
         # 存储缓存
-        np.save(cache_file, (faces, video_frames, boxes, affine_matrices))
-
+        with open(cache_file, "wb") as f:
+            pickle.dump((faces, video_frames, boxes, affine_matrices), f)
         return faces, video_frames, boxes, affine_matrices
 
     def restore_video(self, faces, video_frames, boxes, affine_matrices):
@@ -644,6 +645,7 @@ class LipsyncPipeline(DiffusionPipeline):
             num_inferences = min(len(faces), len(whisper_chunks)) // num_frames
         else:
             num_inferences = len(faces) // num_frames
+        # 音频特征处理非常快
         print('处理音频特征完成', time.time())
 
         synced_video_frames = []
@@ -662,7 +664,8 @@ class LipsyncPipeline(DiffusionPipeline):
             device,
             generator,
         )
-
+    
+        print('潜在变量完成', time.time())
         # 进行推理
         for i in tqdm.tqdm(range(num_inferences), desc="Doing inference..."):
             if self.unet.add_audio_layer:
