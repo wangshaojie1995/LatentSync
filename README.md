@@ -104,7 +104,7 @@ If the download is successful, the checkpoints should appear as follows:
 |   `-- vit_g_hybrid_pt_1200e_ssv2_ft.pth
 ```
 
-These already include all the checkpoints required for latentsync training and inference. If you just want to try inference, you only need to download `latentsync_unet.pt` and `tiny.pt` from our [HuggingFace repo](https://huggingface.co/chunyu-li/LatentSync)
+These already include all the checkpoints required for latentsync training and inference. If you just want to try inference, you only need to download `latentsync_unet.pt` and `tiny.pt` from our [HuggingFace repo](https://huggingface.co/ByteDance/LatentSync)
 
 ## 🚀 Inference
 
